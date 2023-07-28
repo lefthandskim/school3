@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>타이머</title>
+    <style>
+        /* 스타일 설정 */
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 48px;
+            text-align: center;
+            background-color: black; /* 초기 배경 색상을 검은색으로 설정 */
+            color: white; /* 타이머 글자색을 흰색으로 변경 */
+        }
+
+        /* 시계의 글자 크기를 280px로 설정 */
+        #timer {
+            font-size: 270px;
+            margin-top: 0px; /* 시계의 위치를 중간보다 살짝 위로 조정 */
+            color: rgb(174, 242, 166); /* 타이머 글자색을 (174, 242, 166)으로 변경 */
+        }
+
+        #currentTime {
+            font-size: 32px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #dateInfo {
+            font-size: 24px;
+            margin-top: 5px;
+        }
+
+        #setTime {
+            font-size: 40px;
+            margin-top: 90px; /* 시간 입력 부분과 버튼들과의 간격 조정 */
+        }
+
+        #setTime input {
+            width: 60px; /* 시간 입력 박스의 너비를 수정 */
+            font-size: 45px;
+        }
+
+        button {
+            font-size: 35px;
+            margin-top: 30px; /* 버튼들 간의 간격 조정 */
+        }
+    </style>
+</head>
+<body>
+    <div id="setTime">
+        <label for="hours">* 시간 :</label>
+        <input type="number" id="hours" min="0" max="23" value="0" style="width: 60px;"> 시
+        <input type="number" id="minutes" min="0" max="59" value="0" style="width: 60px;"> 분
+        <input type="number" id="seconds" min="0" max="59" value="0" style="width: 60px;"> 초
+    </div>
+    <button onclick="startTimer()" id="startBtn">시작</button>
+    <button onclick="pauseResumeTimer()" id="pauseResumeBtn" disabled>일시 정지</button>
+    <button onclick="resetTimer()">초기화</button>
+
+    <div id="timer">00:00:00:0</div>
+    <div id="currentTime">* 현재 시간 : 00:00:00.0</div>
+    <div id="dateInfo"></div>
+
+    <script>
+        let timerInterval;
+        let timerRunning = false;
+        let remainingMilliseconds = 0; // 남은 시간을 저장할 변수
+
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const milliseconds = now.getMilliseconds().toString().padStart(3, '0').substring(0, 1); // 0.1초까지만 표시
+            const timeString = `* 현재 시간 : ${hours}:${minutes}:${seconds}.${milliseconds}`;
+            document.getElementById('currentTime').innerText = timeString;
+
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
+            const dateInfo = `${year}년 ${month}월 ${day}일 (${dayOfWeek})`;
+            document.getElementById('dateInfo').innerText = dateInfo;
+        }
+
+        setInterval(updateCurrentTime, 100); // 0.1초마다 현재 시간 업데이트
+
+        function startTimer() {
+            if (!timerRunning) {
+                const hours = parseInt(document.getElementById('hours').value);
+                const minutes = parseInt(document.getElementById('minutes').value);
+                const seconds = parseInt(document.getElementById('seconds').value);
+
+                const totalMilliseconds = (hours * 3600 + minutes * 60 + seconds) * 1000;
+                remainingMilliseconds = totalMilliseconds;
+
+                if (totalMilliseconds > 0) {
+                    document.body.style.backgroundColor = "black"; // 배경을 검은색으로 변경
+                    document.body.style.color = "white"; // 글자를 흰색으로 변경
+
+                    timerInterval = setInterval(function() {
+                        if (!timerRunning) return; // 타이머가 일시 정지 상태면 아무 작업도 하지 않음
+
+                        const hoursLeft = Math.floor(remainingMilliseconds / (3600 * 1000));
+                        const minutesLeft = Math.floor((remainingMilliseconds % (3600 * 1000)) / (60 * 1000));
+                        const secondsLeft = Math.floor((remainingMilliseconds % (60 * 1000)) / 1000);
+                        const millisecondsLeft = remainingMilliseconds % 1000;
+                        const timeString = `${hoursLeft.toString().padStart(2, '0')}:${minutesLeft.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}.${millisecondsLeft.toString().padStart(3, '0').substring(0, 1)}`;
+                        document.getElementById('timer').innerText = timeString;
+
+                        remainingMilliseconds -= 100;
+
+                        if (remainingMilliseconds < 0) {
+                            stopTimer();
+                            document.body.style.backgroundColor = "red"; // 배경을 빨간색으로 변경
+                            document.body.style.color = "white"; // 글자를 흰색으로 변경
+                        }
+                    }, 100);
+
+                    timerRunning = true;
+                    document.getElementById('startBtn').disabled = true; // 시작 버튼 비활성화
+                    document.getElementById('pauseResumeBtn').disabled = false; // 일시 정지 버튼 활성화
+                }
+            }
+        }
+
+        function pauseResumeTimer() {
+            timerRunning = !timerRunning;
+            const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+            pauseResumeBtn.innerText = timerRunning ? '일시 정지' : '재개';
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timerRunning = false;
+            document.getElementById('startBtn').disabled = false; // 시작 버튼 활성화
+            document.getElementById('pauseResumeBtn').disabled = true; // 일시 정지 버튼 비활성화
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerRunning = false; // 타이머 상태를 정지 상태로 설정
+            const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+            pauseResumeBtn.innerText = '일시 정지'; // 재개 버튼을 일시 정지 버튼으로 변경
+
+            remainingMilliseconds = 0; // 남은 시간 초기화
+
+            document.getElementById('hours').value = 0;
+            document.getElementById('minutes').value = 0;
+            document.getElementById('seconds').value = 0;
+            document.getElementById('timer').innerText = '00:00:00:0';
+            document.body.style.backgroundColor = "black"; // 배경을 검은색으로 변경
+            document.body.style.color = "white"; // 글자를 흰색으로 변경
+
+            document.getElementById('startBtn').disabled = false; // 시작 버튼 활성화
+            document.getElementById('pauseResumeBtn').disabled = true; // 일시 정지 버튼 비활성화
+        }
+    </script>
+</body>
+</html>
